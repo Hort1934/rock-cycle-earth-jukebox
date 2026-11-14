@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Earth Jukebox — hear NASA's Earth Information Center</title>
+  <meta name="description" content="Earth Jukebox turns NASA Earth Information Center visualizations into music in real time, with a voice-guided mode for blind and low-vision listeners.">
+  <meta name="theme-color" content="#05070f">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2305070f'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%234dabf7' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%2380ed99' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23ffd166'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <a class="skip" href="#player">Skip to the player</a>
+
+  <header class="top">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"></span>
+      <div>
+        <h1>Earth Jukebox</h1>
+        <p class="tagline">Hear our planet change. NASA Earth Information Center visualizations, played as music in real time.</p>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button type="button" class="btn btn-voice" id="voice-btn" aria-describedby="voice-hint">
+        <span aria-hidden="true">🎙️</span> Voice-guided mode
+      </button>
+      <p id="voice-hint" class="hint">Black screen, spoken menus, answer by voice or number keys. Shortcut: V.</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="stage" id="player" tabindex="-1" aria-labelledby="now-title">
+      <div class="screen">
+        <video id="video" muted loop playsinline preload="auto" aria-hidden="true"></video>
+        <img id="still" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" hidden>
+        <canvas id="overlay" aria-hidden="true"></canvas>
+        <div class="screen-empty" id="screen-empty">Pick a record below to begin.</div>
+      </div>
+
+      <div class="now">
+        <p class="eyebrow" id="now-theme">Now playing</p>
+        <h2 id="now-title">Choose a visualization</h2>
+        <p class="now-short" id="now-short"></p>
+
+        <div class="transport" role="group" aria-label="Playback">
+          <button type="button" class="btn icon" id="prev-btn" aria-label="Previous recording">⏮</button>
+          <button type="button" class="btn play" id="play-btn" aria-label="Play" disabled>▶</button>
+          <button type="button" class="btn icon" id="next-btn" aria-label="Next recording">⏭</button>
+          <button type="button" class="btn ghost" id="describe-btn">Describe now</button>
+          <button type="button" class="btn ghost" id="record-btn" aria-pressed="false">● Record</button>
+        </div>
+
+        <div class="controls">
+          <label class="field">
+            <span>Style</span>
+            <select id="genre"></select>
+          </label>
+          <label class="field">
+            <span>Tempo <span id="tempo-out">96</span> BPM</span>
+            <input type="range" id="tempo" min="60" max="150" value="96">
+          </label>
+          <label class="field">
+            <span>Volume</span>
+            <input type="range" id="volume" min="-40" max="0" value="-6">
+          </label>
+          <label class="check"><input type="checkbox" id="groove" checked> Style groove <small>(not data)</small></label>
+          <label class="check"><input type="checkbox" id="narrate"> Live narration</label>
+          <label class="check"><input type="checkbox" id="haptics" checked> Vibrate on hits</label>
+        </div>
+        <p class="genre-note" id="genre-note"></p>
+
+        <fieldset class="mixer" id="mixer">
+          <legend>Layers (what you hear)</legend>
+        </fieldset>
+
+        <p class="live" id="live" aria-live="polite"></p>
+        <div class="download" id="download" hidden></div>
+      </div>
+    </section>
+
+    <section class="details" aria-label="About this recording">
+      <article>
+        <h3>What you see</h3>
+        <p id="see-text">Each record on the shelf is a real visualization from NASA's Scientific Visualization Studio used on the Earth Information Center hyperwall.</p>
+      </article>
+      <article>
+        <h3>What you hear</h3>
+        <p id="hear-text">A playhead sweeps each frame from left to right. Colors from the visualization's color scale are separated into layers, and every layer plays its own instrument.</p>
+      </article>
+      <article>
+        <h3>Source</h3>
+        <p id="credit-text">NASA Scientific Visualization Studio.</p>
+      </article>
+    </section>
+
+    <section class="shelf" aria-labelledby="shelf-title">
+      <div class="shelf-head">
+        <h2 id="shelf-title">The record shelf</h2>
+        <label class="btn ghost upload">
+          <input type="file" id="upload" accept="image/*,video/*">
+          ⤒ Play your own EIC frame or video
+        </label>
+      </div>
+      <div id="shelf"></div>
+    </section>
+
+    <section class="how" aria-labelledby="how-title">
+      <h2 id="how-title">How sight becomes sound</h2>
+      <div class="how-grid">
+        <div><h3>1 · Scan</h3><p>Every frame is averaged down to a small grid (about 72 rows; ultra-wide hyperwall frames get up to 320 columns). A playhead crosses it in 32 steps, so one sweep takes two bars. For flat maps, left to right is west to east.</p></div>
+        <div><h3>2 · Separate</h3><p>Pixels are sorted into layers by the color rules of the visualization's own color bar: dust is red, sea salt is blue, warm anomalies are red, and so on.</p></div>
+        <div><h3>3 · Map</h3><p>Value or height → pitch, kept in a musical mode. Amount on screen → loudness. Position → stereo. Sudden appearance → percussion. Motion and scene tension → the low drone.</p></div>
+        <div><h3>4 · Style</h3><p>Genres only swap instruments and the room. Pitch, rhythm and loudness always come from the data. The optional groove is the only sound that is not data.</p></div>
+      </div>
+      <p class="keys"><strong>Keyboard:</strong> <kbd>Space</kbd> play/pause · <kbd>←</kbd><kbd>→</kbd> previous/next record · <kbd>↑</kbd><kbd>↓</kbd> tempo · <kbd>D</kbd> describe · <kbd>G</kbd> next style · <kbd>1</kbd>–<kbd>4</kbd> layers · <kbd>V</kbd> voice mode</p>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Built by team <strong>Rock Cycle</strong> for the NASA Space Apps Challenge 2026: <em>The Earth Information Jukebox</em>.</p>
+    <p>Visualizations: NASA Scientific Visualization Studio / Earth Information Center. NASA does not endorse this project. Sound: <a href="https://tonejs.github.io/">Tone.js</a> (MIT).</p>
+  </footer>
+
+  <div class="voice" id="voice" role="dialog" aria-modal="true" aria-labelledby="voice-title" hidden>
+    <h2 id="voice-title" class="visually-hidden">Voice-guided mode</h2>
+    <p class="voice-mic" data-voice-mic data-state="idle"></p>
+    <p class="voice-prompt" data-voice-prompt></p>
+    <ol class="voice-options" data-voice-options></ol>
+    <p class="voice-heard" data-voice-heard></p>
+    <button type="button" class="btn ghost voice-exit" data-voice-exit>Exit voice mode (Esc)</button>
+  </div>
+
+  <script src="vendor/Tone.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

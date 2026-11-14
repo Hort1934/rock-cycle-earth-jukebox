@@ -1,0 +1,122 @@
+{
+  "sea-surface": {
+    "id": "sea-surface",
+    "svs": 3912,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a003900/a003912/ecco2_sst_flow.webmhd.webm",
+    "video": "media/sea-surface.mp4",
+    "poster": "media/sea-surface.jpg",
+    "width": 960,
+    "height": 540,
+    "duration": 66.71,
+    "speed": 1,
+    "bytes": 7918810
+  },
+  "ocean-currents": {
+    "id": "ocean-currents",
+    "svs": 5505,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005505/fast_global_small.mp4",
+    "video": "media/ocean-currents.mp4",
+    "poster": "media/ocean-currents.jpg",
+    "width": 960,
+    "height": 480,
+    "duration": 24.08,
+    "speed": 1,
+    "bytes": 2312246
+  },
+  "night-lights": {
+    "id": "night-lights",
+    "svs": 5313,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a005300/a005313/nightlights_flat_series_and_change_wZooms_13_EIC_2160p30_h265.mp4",
+    "video": "media/night-lights.mp4",
+    "poster": "media/night-lights.jpg",
+    "width": 1280,
+    "height": 360,
+    "duration": 43.33,
+    "speed": 1,
+    "bytes": 332403
+  },
+  "aerosols": {
+    "id": "aerosols",
+    "svs": 4582,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a004500/a004582/gmao_aerosols.webm",
+    "video": "media/aerosols.mp4",
+    "poster": "media/aerosols.jpg",
+    "width": 960,
+    "height": 480,
+    "duration": 9.08,
+    "speed": 1,
+    "bytes": 793041
+  },
+  "air-quality": {
+    "id": "air-quality",
+    "svs": 5533,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a005500/a005533/EIC_AirQuality_Preview_3840x1080.mp4",
+    "video": "media/air-quality.mp4",
+    "poster": "media/air-quality.jpg",
+    "width": 1280,
+    "height": 360,
+    "duration": 75.04,
+    "speed": 1,
+    "bytes": 6518207
+  },
+  "carbon-dioxide": {
+    "id": "carbon-dioxide",
+    "svs": 5196,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a005100/a005196/dyamondPointCloud_12-1-2023b_dyamond_co2_anim_globe_orbit_1080p30_h265.mp4",
+    "video": "media/carbon-dioxide.mp4",
+    "poster": "media/carbon-dioxide.jpg",
+    "width": 960,
+    "height": 540,
+    "duration": 39.21,
+    "speed": 1,
+    "bytes": 883449
+  },
+  "lightning": {
+    "id": "lightning",
+    "svs": 5011,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a005000/a005011/iss_lightning_sphere_07312023.mp4",
+    "video": "media/lightning.mp4",
+    "poster": "media/lightning.jpg",
+    "width": 960,
+    "height": 540,
+    "duration": 60.0,
+    "speed": 3.6,
+    "bytes": 3769416
+  },
+  "atmospheric-river": {
+    "id": "atmospheric-river",
+    "svs": 4960,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004960/atmos_river_HD.webm",
+    "video": "media/atmospheric-river.mp4",
+    "poster": "media/atmospheric-river.jpg",
+    "width": 960,
+    "height": 540,
+    "duration": 60.0,
+    "speed": 4.86,
+    "bytes": 8509725
+  },
+  "forest-height": {
+    "id": "forest-height",
+    "svs": 4950,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a004900/a004950/GEDI_global_w_colorbar_1080p60.webm",
+    "video": "media/forest-height.mp4",
+    "poster": "media/forest-height.jpg",
+    "width": 960,
+    "height": 540,
+    "duration": 51.5,
+    "speed": 1,
+    "bytes": 1058459
+  },
+  "temperature": {
+    "id": "temperature",
+    "svs": 5207,
+    "source": "https://svs.gsfc.nasa.gov/vis/a000000/a005200/a005207/2023GISTEMP_Map_HD.mp4",
+    "video": "media/temperature.mp4",
+    "poster": "media/temperature.jpg",
+    "width": 960,
+    "height": 540,
+    "duration": 30.0,
+    "speed": 1,
+    "bytes": 2605889
+  }
+}

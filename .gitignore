@@ -1,0 +1,13 @@
+# raw NASA downloads (rebuild with tools/build_media.py)
+.cache/
+*.part
+
+# local tooling
+node_modules/
+__pycache__/
+.venv/
+venv/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

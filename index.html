@@ -5,8 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Earth Jukebox — hear NASA's Earth Information Center</title>
   <meta name="description" content="Earth Jukebox turns NASA Earth Information Center visualizations into music in real time, with a voice-guided mode for blind and low-vision listeners.">
-  <meta name="theme-color" content="#05070f">
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2305070f'/%3E%3Ccircle cx='32' cy='32' r='22' fill='none' stroke='%234dabf7' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='14' fill='none' stroke='%2380ed99' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%23ffd166'/%3E%3C/svg%3E">
+  <meta name="theme-color" content="#f3eee3">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%231d1b18'/%3E%3Ccircle cx='32' cy='32' r='12' fill='%23d9480f'/%3E%3Ccircle cx='32' cy='32' r='2.5' fill='%23f3eee3'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,700;0,9..144,800;1,9..144,400&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;family=IBM+Plex+Sans:wght@400;500;600&amp;display=swap">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -16,15 +19,16 @@
     <div class="brand">
       <span class="logo" aria-hidden="true"></span>
       <div>
+        <p class="label-line">Rock Cycle · Space Apps 2026 · Kyiv</p>
         <h1>Earth Jukebox</h1>
-        <p class="tagline">Hear our planet change. NASA Earth Information Center visualizations, played as music in real time.</p>
+        <p class="tagline">Ten pictures of a changing planet from NASA's Earth Information Center, played like records. Every note comes from the pixels on screen.</p>
       </div>
     </div>
     <div class="top-actions">
       <button type="button" class="btn btn-voice" id="voice-btn" aria-describedby="voice-hint">
-        <span aria-hidden="true">🎙️</span> Voice-guided mode
+        Voice mode <kbd>V</kbd>
       </button>
-      <p id="voice-hint" class="hint">Black screen, spoken menus, answer by voice or number keys. Shortcut: V.</p>
+      <p id="voice-hint" class="hint">For blind and low-vision listeners: a black screen that talks, and listens.</p>
     </div>
   </header>
 
@@ -35,7 +39,7 @@
           <video id="video" muted loop playsinline preload="auto" aria-hidden="true"></video>
           <img id="still" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" hidden>
           <canvas id="overlay" aria-hidden="true"></canvas>
-          <div class="screen-empty" id="screen-empty">Pick a record below to begin.</div>
+          <div class="screen-empty" id="screen-empty">Pick a record from the shelf below.</div>
         </div>
         <section class="details" aria-label="About this recording">
           <article>
@@ -59,11 +63,11 @@
         <p class="now-short" id="now-short"></p>
 
         <div class="transport" role="group" aria-label="Playback">
-          <button type="button" class="btn icon" id="prev-btn" aria-label="Previous recording">⏮</button>
-          <button type="button" class="btn play" id="play-btn" aria-label="Play" disabled>▶</button>
-          <button type="button" class="btn icon" id="next-btn" aria-label="Next recording">⏭</button>
+          <button type="button" class="btn icon" id="prev-btn" aria-label="Previous recording">&larr; Prev</button>
+          <button type="button" class="btn play" id="play-btn" aria-label="Play" disabled>Play</button>
+          <button type="button" class="btn icon" id="next-btn" aria-label="Next recording">Next &rarr;</button>
           <button type="button" class="btn ghost" id="describe-btn">Describe now</button>
-          <button type="button" class="btn ghost" id="record-btn" aria-pressed="false">● Record</button>
+          <button type="button" class="btn ghost" id="record-btn" aria-pressed="false"><span class="rec-dot" aria-hidden="true"></span>Record</button>
         </div>
 
         <div class="controls">
@@ -86,7 +90,7 @@
         <p class="genre-note" id="genre-note"></p>
 
         <fieldset class="mixer" id="mixer">
-          <legend>Layers (what you hear)</legend>
+          <legend>What you hear</legend>
         </fieldset>
 
         <p class="live" id="live" aria-live="polite"></p>
@@ -97,10 +101,10 @@
 
     <section class="shelf" aria-labelledby="shelf-title">
       <div class="shelf-head">
-        <h2 id="shelf-title">The record shelf</h2>
+        <h2 id="shelf-title">The shelf</h2>
         <label class="btn ghost upload">
           <input type="file" id="upload" accept="image/*,video/*">
-          ⤒ Play your own EIC frame or video
+          Play your own frame or video
         </label>
       </div>
       <div id="shelf"></div>
@@ -130,7 +134,7 @@
     <ol class="voice-options" data-voice-options></ol>
     <p class="voice-heard" data-voice-heard></p>
     <div class="voice-actions">
-      <button type="button" class="btn voice-talk" data-voice-talk>🎙️ Talk (Enter)</button>
+      <button type="button" class="btn voice-talk" data-voice-talk>Talk (Enter)</button>
       <button type="button" class="btn ghost voice-exit" data-voice-exit>Exit voice mode (Esc)</button>
     </div>
     <p class="voice-keys">Keys: <kbd>Enter</kbd> talk · <kbd>1</kbd>–<kbd>9</kbd> choose · <kbd>Space</kbd> pause or play · <kbd>D</kbd> describe · <kbd>R</kbd> repeat · <kbd>H</kbd> help · <kbd>Esc</kbd> exit. Any key stops the voice.</p>

@@ -62,8 +62,9 @@ function markCurrent() {
 
 // ---------- track loading ----------
 function setScreenShape(aspect) {
-  el.screen.classList.toggle('wide', aspect > 3);
-  el.screen.classList.toggle('half', aspect > 1.9 && aspect <= 3);
+  // The screen takes the exact shape of the visualization; ultra-wide hyperwall pieces get the full width.
+  el.screen.style.aspectRatio = String(Math.max(0.5, Math.min(4, aspect)));
+  el.player.classList.toggle('wide', aspect > 2.2);
 }
 
 function selectTrack(id, { scroll = false, media = null } = {}) {
@@ -215,7 +216,10 @@ function drawOverlay() {
   const c = el.overlay;
   const r = c.getBoundingClientRect();
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  if (c.width !== Math.round(r.width * dpr)) { c.width = Math.round(r.width * dpr); c.height = Math.round(r.height * dpr); }
+  const cw = Math.round(r.width * dpr);
+  const ch = Math.round(r.height * dpr);
+  // Both sides must follow the screen: a stale height makes the canvas letterbox and the scan line shrinks.
+  if (c.width !== cw || c.height !== ch) { c.width = cw; c.height = ch; }
   const ctx = c.getContext('2d');
   ctx.clearRect(0, 0, c.width, c.height);
   if (current && analyzer.ready) {

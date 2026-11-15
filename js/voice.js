@@ -36,9 +36,9 @@ const COMMANDS = [
   ['menu', ['menu', 'main menu', 'home', 'start over', 'back to menu', 'go back to menu']],
   ['pause', ['pause', 'stop', 'wait', 'quiet', 'silence', 'hold on']],
   ['play', ['play', 'resume', 'continue', 'start playing', 'listen']],
-  ['describe', ['describe', 'what is happening', "what's happening", 'what do i see', 'where', 'what is on screen']],
+  ['describe', ['describe', 'what is happening', "what's happening", 'what is going on', "what's going on", 'what do i see', 'where', 'what is on screen', 'tell me what you see']],
   ['hear', ['what do i hear', 'explain', 'what does it mean', 'what am i hearing', 'meaning']],
-  ['next', ['next', 'skip', 'another one', 'next one']],
+  ['next', ['next', 'skip', 'another one', 'next one', 'something else', 'something another', 'different one', 'other recording', 'another recording']],
   ['previous', ['previous', 'last one', 'go back one']],
   ['faster', ['faster', 'speed up', 'quicker']],
   ['slower', ['slower', 'slow down']],
@@ -48,6 +48,36 @@ const COMMANDS = [
   ['yes', ['yes', 'yeah', 'yep', 'sure', 'of course', 'okay', 'ok']],
   ['no', ['no', 'nope', 'not really', 'no thanks']],
 ];
+
+// Loose understanding for free speech ("have you got something else?", "what's going on there?"):
+// count intent words in the phrase; used only when no exact command matched.
+const INTENT_WORDS = {
+  describe: ['describe', 'scribe', 'happening', 'going', 'see', 'show', 'showing', 'picture', 'screen', 'where', 'look', 'looks', 'looking', 'map', 'image', 'view'],
+  hear: ['hear', 'hearing', 'sound', 'sounds', 'mean', 'means', 'explain', 'notes', 'instrument', 'instruments', 'why'],
+  next: ['next', 'another', 'other', 'else', 'different', 'skip', 'new', 'something', 'change'],
+  previous: ['previous', 'before', 'last', 'earlier'],
+  pause: ['pause', 'stop', 'wait', 'quiet', 'silence', 'enough', 'mute'],
+  play: ['play', 'resume', 'continue', 'unpause'],
+  faster: ['faster', 'quicker', 'speed'],
+  slower: ['slower', 'slow'],
+  genre: ['style', 'genre', 'jazz', 'electronic', 'ambient', 'orchestral', 'lofi'],
+  menu: ['menu', 'home', 'topics', 'categories', 'start', 'beginning', 'main'],
+  help: ['help', 'how', 'commands', 'options'],
+};
+
+function guessIntent(norm, allowed) {
+  const list = norm.trim().split(' ');
+  if (list.length < 2) return null; // single words during music are usually noise
+  const words = new Set(list);
+  let best = null;
+  let bestHits = 0;
+  let tie = false;
+  for (const intent of allowed) {
+    const hits = (INTENT_WORDS[intent] ?? []).filter((w) => words.has(w)).length;
+    if (hits > bestHits) { best = intent; bestHits = hits; tie = false; } else if (hits && hits === bestHits) tie = true;
+  }
+  return bestHits && !tie ? best : null;
+}
 
 const normalize = (text) => ` ${text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()} `;
 const includesPhrase = (norm, phrase) => norm.includes(` ${phrase} `);
@@ -469,10 +499,16 @@ export class VoiceGuide {
           if (cmd === 'back' || cmd === 'no') { this.beep('ok'); return this.ask('playing'); }
           break;
         case 'playing': {
-          if (cmd === 'play') { this.beep('ok'); return this.command(app.isPlaying() ? 'describe' : 'play'); }
-          if (cmd && ['pause', 'describe', 'hear', 'next', 'previous', 'faster', 'slower', 'genre'].includes(cmd)) { this.beep('ok'); return this.command(cmd); }
           const g = app.genres().find((x) => includesPhrase(norm, x.label.toLowerCase()) || includesPhrase(norm, x.id));
           if (g) { this.beep('ok'); app.setGenre(g.id); return this.ask('playing'); }
+          if (cmd === 'play') { if (app.isPlaying()) break; this.beep('ok'); return this.command('play'); }
+          if (cmd && ['pause', 'describe', 'hear', 'next', 'previous', 'faster', 'slower', 'genre'].includes(cmd)) { this.beep('ok'); return this.command(cmd); }
+          if (cmd === 'back') { this.beep('ok'); return this.command('next'); }
+          const guess = guessIntent(norm, ['describe', 'hear', 'next', 'previous', 'pause', 'play', 'faster', 'slower', 'genre', 'menu', 'help']);
+          if (guess === 'menu') { this.beep('ok'); app.pause(); return this.ask('theme'); }
+          if (guess === 'help') { this.beep('ok'); return this.speak(this.helpText(), { show: false }); }
+          if (guess === 'play' && app.isPlaying()) break;
+          if (guess) { this.beep('ok'); return this.command(guess); }
           break;
         }
         default:

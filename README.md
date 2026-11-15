@@ -178,8 +178,21 @@ Software: [Tone.js](https://github.com/Tonejs/Tone.js) (MIT), [imageio-ffmpeg](h
 
 ## Team Rock Cycle
 
-- **Ihor Marchenko** — sonification engine, frame analysis, web app, CI/CD
+- **Ihor Marchenko** — project concept (building on his earlier sonification project *Cosmic Composers*), sonification engine, frame analysis, web app, testing, CI/CD
 - **Catalina Bratu** — voice-guided mode concept, musical styles concept, storytelling, accessibility, presentation
+
+## Use of AI
+
+The concept, the challenge choice, the choice of NASA visualizations and all design decisions are the team's:
+Ihor Marchenko — sonifying EIC frames as a "jukebox", based on his earlier project *Cosmic Composers*;
+Catalina Bratu — the voice-guided mode for blind listeners and the selectable musical styles.
+
+An AI coding assistant (Claude, by Anthropic) was used as a tool during the hackathon to help write, debug and
+document parts of the code (JavaScript, Python, CSS, GitHub Actions), to tune the color rules against sample frames,
+and to draft documentation text. Everything it produced was reviewed, tested in the browser and adjusted by the team.
+
+No AI-generated images, video or audio are used: the visuals are NASA SVS frames, and all sound is synthesized live
+by the project's own rules from those frames.
 
 ## License
 

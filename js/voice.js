@@ -246,7 +246,7 @@ export class VoiceGuide {
     let state = 'idle';
     if (!SR) text = 'This browser cannot listen. Use the number keys, or open the page in Chrome or Edge.';
     else if (this.micBlocked) text = 'Microphone blocked. Allow it in the address bar, or use the number keys.';
-    else if (this.speaking) text = 'Speaking…';
+    else if (this.speaking) { text = 'Speaking…'; state = 'speaking'; }
     else if (this.recState === 'listening') { text = 'Your turn — I’m listening'; state = 'listening'; }
     else text = 'One moment…';
     this.micEl.textContent = text;

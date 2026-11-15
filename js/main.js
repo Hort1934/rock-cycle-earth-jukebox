@@ -285,6 +285,7 @@ const app = {
   faster: () => setTempo(Number(el.tempo.value) + 12),
   slower: () => setTempo(Number(el.tempo.value) - 12),
   duck: (on) => engine.duck(on),
+  audioContext: () => (window.Tone ? Tone.getContext().rawContext : null),
   ensureAudio,
   focusMain: () => el.voiceBtn.focus(),
 };

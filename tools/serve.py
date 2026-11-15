@@ -15,6 +15,13 @@ ROOT = Path(__file__).resolve().parent.parent
 
 
 class DevHandler(http.server.SimpleHTTPRequestHandler):
+    def handle(self):
+        # Browsers drop video range requests while seeking; that is not an error.
+        try:
+            super().handle()
+        except (ConnectionResetError, BrokenPipeError, ConnectionAbortedError):
+            pass
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store")
         self.send_header("Accept-Ranges", "bytes")

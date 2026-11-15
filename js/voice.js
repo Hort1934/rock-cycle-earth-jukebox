@@ -1,57 +1,55 @@
-// Voice-guided mode: a black screen that talks to the visitor and listens to answers.
+// Voice-guided mode for people who cannot see the screen.
 //
-// Design rules for blind listeners:
-// - every question has the same shape: short question, numbered options, one hint;
-// - a rising beep means "speak now", a low beep means "I did not understand";
-// - speech is spoken sentence by sentence (Chrome silently stops long utterances);
-// - while music plays the microphone is off (it would hear the music): press Enter
-//   or tap the screen, then speak a command;
-// - every action also works with keys, and any key interrupts the voice.
+// One simple rule: the site speaks, beeps once, then listens — always, everywhere,
+// also while music plays. You never have to press anything.
+// - Questions are short and name their options in words; numbers are a fallback.
+// - While music plays, anything that is not a known command is ignored silently
+//   (the microphone also hears the music, so it must not answer noise).
+// - Sentences are spoken one by one (Chrome silently drops long utterances).
+// - Keys still work for everything, and any key interrupts the voice.
 
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 
 const NUMBERS = {
   one: 1, won: 1, first: 1, two: 2, to: 2, too: 2, second: 2, three: 3, tree: 3, third: 3,
-  four: 4, for: 4, fourth: 4, five: 5, fifth: 5, six: 6, sixth: 6, seven: 7, seventh: 7,
-  eight: 8, ate: 8, eighth: 8, nine: 9, ninth: 9, ten: 10,
+  four: 4, for: 4, fourth: 4, five: 5, fifth: 5, six: 6, sixth: 6, seven: 7, eight: 8, nine: 9,
 };
 
 // Extra words people naturally use for each record.
 const RECORD_WORDS = {
   'sea-surface': ['sea surface', 'temperature', 'warm water', 'ocean temperature', 'sea'],
   'ocean-currents': ['currents', 'current', 'perpetual', 'flow', 'gulf stream'],
-  'night-lights': ['night', 'lights', 'light', 'cities', 'city', 'black marble'],
+  'night-lights': ['night', 'lights', 'light', 'cities', 'city'],
   aerosols: ['aerosols', 'aerosol', 'smoke', 'dust', 'salt', 'particles'],
   'air-quality': ['air quality', 'pollution', 'pollutants', 'ozone', 'nitrogen', 'monoxide'],
-  'carbon-dioxide': ['carbon', 'dioxide', 'co2', 'co 2', 'greenhouse'],
+  'carbon-dioxide': ['carbon', 'dioxide', 'co2', 'greenhouse'],
   lightning: ['lightning', 'lighting', 'flashes', 'thunder', 'storms', 'storm'],
-  'atmospheric-river': ['atmospheric', 'river', 'vapor', 'vapour', 'rain', 'pineapple'],
-  'forest-height': ['forest', 'forests', 'trees', 'tree height', 'gedi', 'canopy'],
-  temperature: ['warming', 'global temperature', 'anomalies', 'anomaly', 'climate', 'heat'],
+  'atmospheric-river': ['atmospheric', 'river', 'vapor', 'vapour', 'rain'],
+  'forest-height': ['forest', 'forests', 'trees', 'canopy'],
+  temperature: ['warming', 'global temperature', 'anomalies', 'climate', 'heat'],
 };
 
 const COMMANDS = [
   ['exit', ['exit', 'leave', 'quit', 'close voice', 'stop voice mode', 'goodbye']],
-  ['help', ['help', 'commands', 'what can i say', 'options']],
+  ['help', ['help', 'commands', 'what can i say']],
   ['repeat', ['repeat', 'again', 'say that again', 'pardon']],
-  ['menu', ['menu', 'main menu', 'home', 'start over', 'go back', 'back to menu']],
+  ['menu', ['menu', 'main menu', 'home', 'start over', 'back to menu', 'go back to menu']],
   ['pause', ['pause', 'stop', 'wait', 'quiet', 'silence', 'hold on']],
   ['play', ['play', 'resume', 'continue', 'start playing', 'listen']],
-  ['describe', ['describe', 'what is happening', "what's happening", 'what do i see', 'where', 'tell me what']],
-  ['hear', ['what do i hear', 'explain', 'what does it mean', 'meaning', 'what am i hearing', 'explain sound']],
+  ['describe', ['describe', 'what is happening', "what's happening", 'what do i see', 'where', 'what is on screen']],
+  ['hear', ['what do i hear', 'explain', 'what does it mean', 'what am i hearing', 'meaning']],
   ['next', ['next', 'skip', 'another one', 'next one']],
-  ['previous', ['previous', 'last one', 'go back one', 'before']],
+  ['previous', ['previous', 'last one', 'go back one']],
   ['faster', ['faster', 'speed up', 'quicker']],
   ['slower', ['slower', 'slow down']],
   ['genre', ['genre', 'style', 'change music', 'change style', 'music style']],
+  ['more', ['more', 'tell me more', 'tell me about it', 'about it']],
+  ['back', ['back', 'choose another', 'another', 'other one', 'something else']],
   ['yes', ['yes', 'yeah', 'yep', 'sure', 'of course', 'okay', 'ok']],
-  ['no', ['no', 'nope', 'not really']],
+  ['no', ['no', 'nope', 'not really', 'no thanks']],
 ];
 
-function normalize(text) {
-  return ` ${text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()} `;
-}
-
+const normalize = (text) => ` ${text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()} `;
 const includesPhrase = (norm, phrase) => norm.includes(` ${phrase} `);
 
 function numberIn(norm) {
@@ -62,8 +60,12 @@ function numberIn(norm) {
   return null;
 }
 
-function splitSentences(text) {
-  return text.match(/[^.!?]+[.!?]*/g)?.map((s) => s.trim()).filter(Boolean) ?? [text];
+const splitSentences = (text) => text.match(/[^.!?]+[.!?]*/g)?.map((s) => s.trim()).filter(Boolean) ?? [text];
+
+// "Ocean, Air and Weather" — how a person would list things.
+function spokenList(items) {
+  if (items.length <= 1) return items.join('');
+  return `${items.slice(0, -1).join(', ')}, or ${items[items.length - 1]}`;
 }
 
 export class VoiceGuide {
@@ -79,14 +81,13 @@ export class VoiceGuide {
     this.choices = [];
     this.lastSpoken = '';
     this.misses = 0;
-    this.silences = 0;
+    this.quietRounds = 0;
     this.recState = 'idle'; // idle | listening | stopping
-    this.wantListen = false;
     this.speechToken = 0;
     this.onKey = (e) => this.handleKey(e);
 
     root.querySelector('[data-voice-exit]').addEventListener('click', () => this.exit());
-    root.querySelector('[data-voice-talk]').addEventListener('click', () => this.talk());
+    root.querySelector('[data-voice-talk]').addEventListener('click', () => { this.stopSpeaking(); this.listen(true); });
 
     if (SR) this.setupRecognition();
   }
@@ -100,22 +101,21 @@ export class VoiceGuide {
     rec.onstart = () => { this.recState = 'listening'; this.heard = false; this.updateMic(); };
     rec.onresult = (e) => {
       this.heard = true;
+      this.quietRounds = 0;
       const alts = [...e.results[0]].map((a) => a.transcript);
-      this.heardEl.textContent = `You said: “${alts[0]}”`;
+      this.heardEl.textContent = `Heard: “${alts[0]}”`;
       this.handle(alts);
     };
     rec.onerror = (e) => {
-      if (e.error === 'not-allowed' || e.error === 'service-not-allowed' || e.error === 'audio-capture') {
-        this.micBlocked = true;
-      }
+      if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(e.error)) this.micBlocked = true;
     };
     rec.onend = () => {
-      const heard = this.heard;
       this.recState = 'idle';
       this.updateMic();
-      if (!this.active) return;
-      if (this.wantListen) { this.wantListen = false; this.listen(); return; }
-      if (!heard && !this.micBlocked && !this.speaking) this.onSilence();
+      if (!this.active || this.speaking || this.micBlocked) return;
+      if (!this.heard) this.onQuiet();
+      // Keep listening: the visitor never has to press anything.
+      setTimeout(() => this.listen(), 200);
     };
     this.rec = rec;
   }
@@ -127,7 +127,7 @@ export class VoiceGuide {
     this.root.hidden = false;
     document.body.classList.add('voice-on');
     document.addEventListener('keydown', this.onKey, true);
-    this.root.querySelector('[data-voice-talk]').focus();
+    this.root.querySelector('[data-voice-exit]').focus();
     await this.app.ensureAudio();
     this.ask('welcome');
   }
@@ -154,12 +154,13 @@ export class VoiceGuide {
       const g = ctx.createGain();
       o.type = 'sine';
       o.frequency.value = f;
-      g.gain.setValueAtTime(0.0001, t0 + i * 0.11);
-      g.gain.exponentialRampToValueAtTime(0.25, t0 + i * 0.11 + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.0001, t0 + i * 0.11 + 0.1);
+      const t = t0 + i * 0.11;
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.25, t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
       o.connect(g).connect(ctx.destination);
-      o.start(t0 + i * 0.11);
-      o.stop(t0 + i * 0.11 + 0.12);
+      o.start(t);
+      o.stop(t + 0.12);
     });
   }
 
@@ -174,48 +175,48 @@ export class VoiceGuide {
     }
   }
 
-  // Speaks sentence by sentence; resolves true if finished, false if interrupted.
-  async speak(text, { show = true } = {}) {
+  // Speaks sentence by sentence, then beeps and listens. Resolves false if interrupted.
+  async speak(text, { show = true, then = 'listen' } = {}) {
     this.stopListening();
     this.stopSpeaking();
     if (show) this.promptEl.textContent = text;
     this.lastSpoken = text;
-    if (!('speechSynthesis' in window)) return true;
     const token = this.speechToken;
-    this.speaking = true;
-    this.updateMic();
-    this.app.duck(true);
-    const voice = speechSynthesis.getVoices().find((v) => v.lang === 'en-US' && /natural|google|samantha|aria|jenny|zira/i.test(v.name))
-      ?? speechSynthesis.getVoices().find((v) => v.lang?.startsWith('en'));
-    for (const sentence of splitSentences(text)) {
+    if ('speechSynthesis' in window) {
+      this.speaking = true;
+      this.updateMic();
+      this.app.duck(true);
+      const voices = speechSynthesis.getVoices();
+      const voice = voices.find((v) => v.lang === 'en-US' && /natural|google|samantha|aria|jenny|zira/i.test(v.name))
+        ?? voices.find((v) => v.lang?.startsWith('en'));
+      for (const sentence of splitSentences(text)) {
+        if (token !== this.speechToken) return false;
+        await new Promise((resolve) => {
+          const u = new SpeechSynthesisUtterance(sentence);
+          u.lang = 'en-US';
+          u.rate = 0.95;
+          if (voice) u.voice = voice;
+          const timer = setTimeout(resolve, 1500 + sentence.length * 90); // some engines never fire onend
+          u.onend = u.onerror = () => { clearTimeout(timer); resolve(); };
+          speechSynthesis.speak(u);
+        });
+      }
       if (token !== this.speechToken) return false;
-      await new Promise((resolve) => {
-        const u = new SpeechSynthesisUtterance(sentence);
-        u.lang = 'en-US';
-        u.rate = 0.95;
-        if (voice) u.voice = voice;
-        // Watchdog: some engines never fire onend.
-        const timer = setTimeout(resolve, 1500 + sentence.length * 90);
-        u.onend = u.onerror = () => { clearTimeout(timer); resolve(); };
-        speechSynthesis.speak(u);
-      });
+      this.speaking = false;
+      this.app.duck(false);
     }
-    if (token !== this.speechToken) return false;
-    this.speaking = false;
-    this.app.duck(false);
     this.updateMic();
+    if (then === 'listen') this.listen(true);
     return true;
   }
 
   // ---------- speech in ----------
   get canListen() { return !!this.rec && !this.micBlocked; }
 
-  listen() {
-    if (!this.active || !this.canListen || this.speaking) return;
-    if (this.recState === 'listening') return;
-    if (this.recState === 'stopping') { this.wantListen = true; return; }
+  listen(withBeep = false) {
+    if (!this.active || !this.canListen || this.speaking || this.recState !== 'idle') return;
+    if (withBeep) this.beep('listen');
     try {
-      this.beep('listen');
       this.recState = 'listening';
       this.rec.start();
     } catch {
@@ -225,47 +226,31 @@ export class VoiceGuide {
   }
 
   stopListening() {
-    this.wantListen = false;
     if (this.rec && this.recState === 'listening') {
       this.recState = 'stopping';
       try { this.rec.abort(); } catch { this.recState = 'idle'; }
     }
   }
 
-  // Push-to-talk: Enter key or the Talk button.
-  talk() {
-    this.stopSpeaking();
-    if (!this.canListen) {
-      this.speak(this.micBlocked
-        ? 'The microphone is not available. Please use the number keys.'
-        : 'This browser cannot listen. Please use the number keys, or open the page in Chrome or Edge.');
-      return;
-    }
-    this.app.duck(true);
-    this.listen();
-  }
-
-  onSilence() {
-    if (this.state === 'playing') { this.app.duck(false); return; }
-    this.silences++;
-    if (this.silences === 1) {
-      const n = this.choices.length;
-      this.speak(`I am listening. Say ${n === 1 ? 'one' : `a number from 1 to ${n}`}, or press it on the keyboard.`, { show: false })
-        .then((done) => done && this.listen());
-    } else {
-      this.speak('Press Enter or tap the screen when you are ready to speak.', { show: false });
+  // Nothing was said for a while: one short, friendly reminder in menus, never during music.
+  onQuiet() {
+    if (this.state === 'playing' || this.state === 'intro') return;
+    this.quietRounds++;
+    if (this.quietRounds === 2) {
+      this.speak(`I'm listening. ${this.choiceHint()}`, { show: false });
     }
   }
 
   updateMic() {
     let text;
-    if (!SR) text = 'This browser cannot listen. Use the number keys.';
-    else if (this.micBlocked) text = 'Microphone blocked. Use the number keys.';
-    else if (this.speaking) text = 'Speaking… (press any key to skip)';
-    else if (this.recState === 'listening') text = '● Listening — speak now';
-    else text = 'Press Enter or tap “Talk” to speak.';
+    let state = 'idle';
+    if (!SR) text = 'This browser cannot listen. Use the number keys, or open the page in Chrome or Edge.';
+    else if (this.micBlocked) text = 'Microphone blocked. Allow it in the address bar, or use the number keys.';
+    else if (this.speaking) text = 'Speaking…';
+    else if (this.recState === 'listening') { text = 'Your turn — I’m listening'; state = 'listening'; }
+    else text = 'One moment…';
     this.micEl.textContent = text;
-    this.micEl.dataset.state = this.recState === 'listening' ? 'listening' : 'idle';
+    this.micEl.dataset.state = state;
   }
 
   // ---------- menus ----------
@@ -283,69 +268,79 @@ export class VoiceGuide {
     });
   }
 
-  // One shape for every question: question, numbered options, one hint, then listen.
-  async menu(state, question, choices, { hint = 'Say the number or the name.', listen = true } = {}) {
-    this.state = state;
-    this.misses = 0;
-    this.silences = 0;
-    this.showChoices(choices);
-    const options = choices.map((c, i) => `Option ${i + 1}: ${c.spoken ?? c.label}.`).join(' ');
-    const done = await this.speak(`${question} ${options} ${hint}`);
-    if (done && listen) this.listen();
+  choiceHint() {
+    const names = this.choices.map((c) => c.say ?? c.label);
+    if (this.state === 'welcome') return 'Just say yes, or no.';
+    return `You can say ${spokenList(names)}.`;
   }
 
   async ask(state, extra) {
     const app = this.app;
+    this.misses = 0;
+    this.quietRounds = 0;
     switch (state) {
       case 'welcome':
-        return this.menu('welcome',
-          'Welcome to Earth Jukebox. Here you can listen to NASA pictures of our planet, turned into music. Is this your first time here?',
-          [{ label: 'Yes, first time', id: 'yes', spoken: 'yes' }, { label: 'No, I have been here', id: 'no', spoken: 'no' }],
-          { hint: 'Say yes or no. After each question you will hear a beep. Then speak.' });
-      case 'intro': {
+        this.state = 'welcome';
+        this.showChoices([{ label: 'Yes, first time', id: 'yes', say: 'yes' }, { label: 'No, I have been here', id: 'no', say: 'no' }]);
+        return this.speak('Welcome to Earth Jukebox. You will hear NASA pictures of our planet as music. I will ask you simple questions. Answer after the beep. Is this your first time here?');
+
+      case 'intro':
         this.state = 'intro';
         this.choices = [];
-        await this.speak('Here is how it works. You choose a NASA picture of Earth. The picture is read from left to right, like a record. Each color becomes an instrument. Higher values play higher notes. More of something plays louder. While the music plays, press Enter or tap the screen, and say a command, like describe, pause, or next.');
+        await this.speak('Here is how it works. Each picture is read from left to right, like a record. Every color becomes an instrument. Higher values play higher notes, and more of something plays louder. While the music plays, I keep listening. You can say describe, what do I hear, pause, next, or menu at any time.', { then: 'none' });
         if (this.state === 'intro') return this.ask('theme');
         return null;
-      }
+
       case 'theme': {
+        this.state = 'theme';
         const themes = app.themes.filter((t) => app.tracks(t.id).length);
-        return this.menu('theme', 'Which part of Earth would you like to hear?',
-          themes.map((t) => ({ label: t.label, id: t.id, spoken: t.label.replace('&', 'and') })),
-          { hint: 'Say the number or the name. Or say surprise me.' });
+        this.showChoices(themes.map((t) => ({ label: t.label, id: t.id, say: t.label.replace('&', 'and') })));
+        return this.speak(`Which part of Earth would you like to hear? ${spokenList(themes.map((t) => t.label.replace('&', 'and')))}. Or say surprise me.`);
       }
+
       case 'track': {
+        this.state = 'track';
         this.themeId = extra;
         const tracks = app.tracks(extra);
-        return this.menu('track', tracks.length === 1 ? 'There is one recording.' : `There are ${tracks.length} recordings.`,
-          tracks.map((t) => ({ label: t.title, id: t.id, spoken: t.short })));
+        const theme = app.themes.find((t) => t.id === extra)?.label.replace('&', 'and') ?? '';
+        this.showChoices(tracks.map((t) => ({ label: t.title, id: t.id, say: t.short })));
+        if (tracks.length === 1) {
+          return this.speak(`In ${theme}, there is one recording: ${tracks[0].short}. Say play to start, or more to hear about it.`);
+        }
+        const list = tracks.map((t, i) => `Number ${i + 1}: ${t.short}.`).join(' ');
+        return this.speak(`In ${theme}, there are ${tracks.length} recordings. ${list} Which one?`);
       }
+
       case 'confirm': {
+        this.state = 'confirm';
         const t = app.select(extra);
-        return this.menu('confirm', `${t.title}. ${t.short}.`,
-          [{ label: 'Play', id: 'play' }, { label: 'Tell me more first', id: 'more', spoken: 'tell me more' }, { label: 'Choose another', id: 'back', spoken: 'choose another' }]);
+        this.showChoices([{ label: 'Play', id: 'play', say: 'play' }, { label: 'Tell me more', id: 'more', say: 'more' }, { label: 'Choose another', id: 'back', say: 'back' }]);
+        return this.speak(`${t.title}. Say play to start, more to hear about it, or back.`);
       }
+
       case 'more': {
+        this.state = 'more';
         const t = app.current();
-        return this.menu('more', `What the picture shows. ${t.see} What you will hear. ${t.hear}`,
-          [{ label: 'Play', id: 'play' }, { label: 'Choose another', id: 'back', spoken: 'choose another' }]);
+        this.showChoices([{ label: 'Play', id: 'play', say: 'play' }, { label: 'Choose another', id: 'back', say: 'back' }]);
+        return this.speak(`${t.see} ${t.hear} Say play when you are ready, or back.`);
       }
+
       case 'genre': {
+        this.state = 'genre';
         const genres = app.genres();
-        return this.menu('genre', 'Choose a music style. The data stays the same. Only the instruments change.',
-          genres.map((g) => ({ label: g.label, id: g.id })));
+        this.showChoices(genres.map((g) => ({ label: g.label, id: g.id })));
+        return this.speak(`Which music style? ${spokenList(genres.map((g) => g.label))}. The data stays the same, only the instruments change.`);
       }
+
       case 'playing': {
         this.state = 'playing';
         this.showChoices([
-          { label: 'Pause or play', id: 'toggle' }, { label: 'Describe what is happening', id: 'describe' },
-          { label: 'What do I hear?', id: 'hear' }, { label: 'Next recording', id: 'next' },
+          { label: 'Describe what is happening', id: 'describe' }, { label: 'What do I hear?', id: 'hear' },
+          { label: 'Pause or play', id: 'toggle' }, { label: 'Next recording', id: 'next' },
           { label: 'Change music style', id: 'genre' }, { label: 'Main menu', id: 'menu' },
         ]);
         if (!app.isPlaying()) await app.play();
-        await this.speak(`Now playing: ${app.current().title}, in ${app.genreLabel()} style. To give a command, press Enter or tap the screen, then speak. For example: describe, pause, next, or help.`);
-        return null;
+        return this.speak(`Now playing: ${app.current().title}. I'm still listening. Say describe, pause, next, or menu whenever you like.`);
       }
       default:
         return null;
@@ -356,11 +351,11 @@ export class VoiceGuide {
     const c = this.choices[i];
     if (!c) {
       this.beep('miss');
-      this.speak(`There is no option ${i + 1}. Choose from 1 to ${this.choices.length}.`, { show: false });
+      this.speak(this.choices.length ? `Please choose 1 to ${this.choices.length}.` : 'One moment, please.', { show: false });
       return;
     }
     this.beep('ok');
-    this.heardEl.textContent = `You chose: ${c.label}`;
+    this.heardEl.textContent = `Chosen: ${c.label}`;
     this.route(c.id);
   }
 
@@ -389,13 +384,12 @@ export class VoiceGuide {
     const app = this.app;
     switch (id) {
       case 'toggle':
-        if (app.isPlaying()) { app.pause(); return this.speak('Paused. Press space or say play to continue.'); }
-        await app.play();
-        return this.speak('Playing.');
-      case 'pause': app.pause(); return this.speak('Paused. Press space or say play to continue.');
+        if (app.isPlaying()) return this.command('pause');
+        return this.command('play');
+      case 'pause': app.pause(); return this.speak('Paused. Say play to continue.');
       case 'play': await app.play(); return this.speak('Playing.');
       case 'describe': return this.speak(app.describeNow());
-      case 'hear': return this.speak(`${app.current().hear} ${app.mappingText()}`);
+      case 'hear': return this.speak(app.current().hear);
       case 'next': app.next(); return this.ask('playing');
       case 'previous': app.previous(); return this.ask('playing');
       case 'genre': return this.ask('genre');
@@ -407,14 +401,10 @@ export class VoiceGuide {
   }
 
   helpText() {
-    switch (this.state) {
-      case 'playing':
-        return 'While the music plays, press Enter or tap the screen, then say: describe, what do I hear, pause, play, next, previous, faster, slower, style, menu, or exit. Without speaking: space pauses, D describes, the arrow keys change the recording.';
-      case 'genre': case 'theme': case 'track': case 'confirm': case 'more': case 'welcome':
-        return `Say the number of an option, from 1 to ${this.choices.length}, or press it on the keyboard. Say repeat to hear the options again, menu to start over, or exit to leave voice mode.`;
-      default:
-        return 'Say a number, or say menu, repeat, or exit.';
+    if (this.state === 'playing') {
+      return 'You can say: describe, what do I hear, pause, play, next, previous, faster, slower, style, menu, or exit.';
     }
+    return `${this.choiceHint()} You can also say a number, repeat, menu, or exit.`;
   }
 
   // ---------- understanding ----------
@@ -429,9 +419,8 @@ export class VoiceGuide {
     let best = -1;
     let bestScore = 0;
     this.choices.forEach((c, i) => {
-      const words = [c.label, c.spoken, c.id, ...(RECORD_WORDS[c.id] ?? []),
-        ...(this.app.themes.find((t) => t.id === c.id)?.words ?? [])]
-        .filter(Boolean).map((w) => w.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim());
+      const words = [c.label, c.say, c.id, ...(RECORD_WORDS[c.id] ?? []), ...(this.app.themes.find((t) => t.id === c.id)?.words ?? [])]
+        .filter(Boolean).map((w) => normalize(w).trim());
       let score = 0;
       for (const w of words) {
         if (w && includesPhrase(norm, w)) score = Math.max(score, w.length + 10);
@@ -449,45 +438,61 @@ export class VoiceGuide {
       const cmd = this.findCommand(norm);
 
       if (cmd === 'exit') return this.exit();
-      if (cmd === 'help') { this.beep('ok'); return this.speak(this.helpText()).then((d) => d && this.state !== 'playing' && this.listen()); }
-      if (cmd === 'repeat') { this.beep('ok'); return this.speak(this.lastSpoken).then((d) => d && this.state !== 'playing' && this.listen()); }
+      if (cmd === 'help') { this.beep('ok'); return this.speak(this.helpText(), { show: false }); }
+      if (cmd === 'repeat') { this.beep('ok'); return this.speak(this.lastSpoken); }
       if (cmd === 'menu') { this.beep('ok'); app.pause(); return this.ask('theme'); }
 
-      if (this.state === 'welcome' && (cmd === 'yes' || cmd === 'no')) { this.beep('ok'); return this.route(cmd); }
-      if (this.state === 'theme' && /\b(surprise|random|anything|any)\b/.test(norm)) {
-        this.beep('ok');
-        const all = app.tracks();
-        return this.ask('confirm', all[Math.floor(Math.random() * all.length)].id);
-      }
-      if ((this.state === 'confirm' || this.state === 'more')) {
-        if (cmd === 'play' || cmd === 'yes') { this.beep('ok'); return this.route('play'); }
-        if (/\b(more|tell)\b/.test(norm)) { this.beep('ok'); return this.route('more'); }
-        if (/\b(another|other|back)\b/.test(norm) || cmd === 'no') { this.beep('ok'); return this.route('back'); }
-      }
-      if (this.state === 'playing') {
-        if (cmd === 'play' && !app.isPlaying()) { this.beep('ok'); return this.command('play'); }
-        if (cmd === 'pause') { this.beep('ok'); return this.command('pause'); }
-        if (cmd && ['describe', 'hear', 'next', 'previous', 'faster', 'slower', 'genre'].includes(cmd)) { this.beep('ok'); return this.command(cmd); }
-        const g = app.genres().find((x) => includesPhrase(norm, x.label.toLowerCase()) || includesPhrase(norm, x.id));
-        if (g) { this.beep('ok'); app.setGenre(g.id); return this.ask('playing'); }
+      switch (this.state) {
+        case 'welcome':
+          if (cmd === 'yes' || cmd === 'no') { this.beep('ok'); return this.route(cmd); }
+          break;
+        case 'theme':
+          if (/ (surprise|random|anything|any) /.test(norm)) {
+            this.beep('ok');
+            const all = app.tracks();
+            return this.ask('confirm', all[Math.floor(Math.random() * all.length)].id);
+          }
+          break;
+        case 'track':
+          // With a single recording, "play" and "more" work straight away.
+          if (this.choices.length === 1 && (cmd === 'play' || cmd === 'yes')) { this.beep('ok'); app.select(this.choices[0].id); return this.ask('playing'); }
+          if (this.choices.length === 1 && cmd === 'more') { this.beep('ok'); app.select(this.choices[0].id); return this.ask('more'); }
+          if (cmd === 'back') { this.beep('ok'); return this.ask('theme'); }
+          break;
+        case 'confirm':
+        case 'more':
+          if (cmd === 'play' || cmd === 'yes') { this.beep('ok'); return this.route('play'); }
+          if (cmd === 'more') { this.beep('ok'); return this.route('more'); }
+          if (cmd === 'back' || cmd === 'no') { this.beep('ok'); return this.route('back'); }
+          break;
+        case 'genre':
+          if (cmd === 'back' || cmd === 'no') { this.beep('ok'); return this.ask('playing'); }
+          break;
+        case 'playing': {
+          if (cmd === 'play') { this.beep('ok'); return this.command(app.isPlaying() ? 'describe' : 'play'); }
+          if (cmd && ['pause', 'describe', 'hear', 'next', 'previous', 'faster', 'slower', 'genre'].includes(cmd)) { this.beep('ok'); return this.command(cmd); }
+          const g = app.genres().find((x) => includesPhrase(norm, x.label.toLowerCase()) || includesPhrase(norm, x.id));
+          if (g) { this.beep('ok'); app.setGenre(g.id); return this.ask('playing'); }
+          break;
+        }
+        default:
       }
 
-      const i = this.matchChoice(norm);
-      if (i >= 0 && this.state !== 'playing') return this.choose(i);
+      if (this.state !== 'playing') {
+        const i = this.matchChoice(norm);
+        if (i >= 0) return this.choose(i);
+      }
     }
-    return this.notUnderstood(alternatives[0]);
+    return this.notUnderstood();
   }
 
-  notUnderstood(text) {
+  notUnderstood() {
+    // During music the microphone also hears the music: ignore anything that is not a command.
+    if (this.state === 'playing' || this.state === 'intro') return;
     this.beep('miss');
     this.misses++;
-    const n = this.choices.length;
-    const range = n === 1 ? 'one' : n ? `a number from 1 to ${n}` : 'a command';
-    let msg;
-    if (this.state === 'playing') msg = `Sorry, I heard “${text}”. Say help to hear the commands.`;
-    else if (this.misses === 1) msg = `Sorry, I heard “${text}”. Please say ${range}.`;
-    else msg = `Let me read the options again. ${this.choices.map((c, i) => `Option ${i + 1}: ${c.spoken ?? c.label}.`).join(' ')} You can also press the number on the keyboard.`;
-    this.speak(msg, { show: false }).then((d) => d && this.state !== 'playing' && this.listen());
+    const msg = this.misses === 1 ? `Sorry, I didn't get that. ${this.choiceHint()}` : `Sorry. ${this.choiceHint()} Or press a number key from 1 to ${this.choices.length}.`;
+    this.speak(msg, { show: false });
   }
 
   // ---------- keyboard ----------
@@ -495,26 +500,24 @@ export class VoiceGuide {
     if (!this.active || e.ctrlKey || e.metaKey || e.altKey) return;
     const k = e.key.toLowerCase();
     if (k === 'tab' || k === 'shift') return;
-    const wasSpeaking = this.speaking;
     if (k === 'escape') { e.preventDefault(); this.exit(); return; }
-    if (k === 'enter' && document.activeElement?.closest?.('[data-voice-options]')) return;
+    if (k === 'enter' && document.activeElement?.closest?.('[data-voice-options], .voice-actions')) return;
     e.preventDefault();
     if (this.state === 'intro') { this.stopSpeaking(); return; }
     if (/^[1-9]$/.test(k)) { this.stopSpeaking(); this.stopListening(); this.choose(Number(k) - 1); return; }
     switch (k) {
-      case 'enter': this.talk(); return;
+      case 'enter': this.stopSpeaking(); this.listen(true); return;
       case ' ': this.stopSpeaking(); if (this.state === 'playing') this.command('toggle'); return;
-      case 'd': this.stopSpeaking(); this.command('describe'); return;
-      case 'h': this.speak(this.helpText()); return;
+      case 'd': this.stopSpeaking(); if (this.state === 'playing') this.command('describe'); return;
+      case 'h': this.speak(this.helpText(), { show: false }); return;
       case 'r': this.speak(this.lastSpoken); return;
       case 'm': this.app.pause(); this.ask('theme'); return;
       case 'g': this.ask('genre'); return;
-      case 'arrowright': this.command('next'); return;
-      case 'arrowleft': this.command('previous'); return;
+      case 'arrowright': if (this.state === 'playing') this.command('next'); return;
+      case 'arrowleft': if (this.state === 'playing') this.command('previous'); return;
       case 'y': if (this.state === 'welcome') this.choose(0); return;
       case 'n': if (this.state === 'welcome') this.choose(1); return;
-      default:
-        if (wasSpeaking) this.stopSpeaking(); // any other key just skips the voice
+      default: this.stopSpeaking(); this.listen(true);
     }
   }
 }

@@ -30,12 +30,14 @@ const ROLE_LABEL = { melody: 'melody', pad: 'chords', bass: 'bass', perc: 'percu
 // ---------- shelf ----------
 function renderShelf() {
   el.shelf.innerHTML = '';
+  let sideIndex = 0;
+  let cat = 0;
   for (const theme of THEMES) {
     const tracks = TRACKS.filter((t) => t.theme === theme.id);
     if (!tracks.length) continue;
     const row = document.createElement('div');
     row.className = 'theme-row';
-    row.innerHTML = `<h3>${theme.label}</h3>`;
+    row.innerHTML = `<h3>Side ${String.fromCharCode(65 + sideIndex++)} · ${theme.label}</h3>`;
     const grid = document.createElement('div');
     grid.className = 'records';
     for (const t of tracks) {
@@ -47,7 +49,7 @@ function renderShelf() {
       if (!m) b.dataset.missing = '';
       b.setAttribute('aria-label', `${t.title}. ${t.short}.${m ? '' : ' Media not available.'}`);
       b.innerHTML = `<span class="cover"${m ? ` style="background-image:url('${m.poster}')"` : ''}></span>
-        <span class="meta"><span class="t">${t.title}</span><span class="s">${t.short}</span></span>`;
+        <span class="meta"><span class="cat">RC-${String(++cat).padStart(2, '0')} · SVS ${t.svs}</span><span class="t">${t.title}</span><span class="s">${t.short}</span></span>`;
       b.addEventListener('click', () => m && selectTrack(t.id, { scroll: true }));
       grid.append(b);
     }
@@ -150,7 +152,7 @@ function pause() {
 
 function setPlayingUi(on) {
   document.body.classList.toggle('is-playing', on);
-  el.play.textContent = on ? '⏸' : '▶';
+  el.play.textContent = on ? 'Pause' : 'Play';
   el.play.setAttribute('aria-label', on ? 'Pause' : 'Play');
   clearInterval(narrateTimer);
   if (on && el.narrate.checked) narrateTimer = setInterval(narrate, 9000);
@@ -197,13 +199,13 @@ async function toggleRecord() {
     engine.startRecording();
     recording = true;
     el.record.setAttribute('aria-pressed', 'true');
-    el.record.textContent = '■ Stop recording';
+    el.record.textContent = 'Stop recording';
     if (!engine.playing) play();
     return;
   }
   recording = false;
   el.record.setAttribute('aria-pressed', 'false');
-  el.record.textContent = '● Record';
+  el.record.innerHTML = '<span class="rec-dot" aria-hidden="true"></span>Record';
   const blob = await engine.stopRecording();
   const url = URL.createObjectURL(blob);
   const name = `earth-jukebox-${current?.id ?? 'track'}-${engine.genre}.webm`;

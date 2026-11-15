@@ -30,11 +30,27 @@
 
   <main>
     <section class="stage" id="player" tabindex="-1" aria-labelledby="now-title">
-      <div class="screen">
-        <video id="video" muted loop playsinline preload="auto" aria-hidden="true"></video>
-        <img id="still" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" hidden>
-        <canvas id="overlay" aria-hidden="true"></canvas>
-        <div class="screen-empty" id="screen-empty">Pick a record below to begin.</div>
+      <div class="stage-left">
+        <div class="screen">
+          <video id="video" muted loop playsinline preload="auto" aria-hidden="true"></video>
+          <img id="still" alt="" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" hidden>
+          <canvas id="overlay" aria-hidden="true"></canvas>
+          <div class="screen-empty" id="screen-empty">Pick a record below to begin.</div>
+        </div>
+        <section class="details" aria-label="About this recording">
+          <article>
+            <h3>What you see</h3>
+            <p id="see-text">Each record on the shelf is a real visualization from NASA's Scientific Visualization Studio used on the Earth Information Center hyperwall.</p>
+          </article>
+          <article>
+            <h3>What you hear</h3>
+            <p id="hear-text">A playhead sweeps each frame from left to right. Colors from the visualization's color scale are separated into layers, and every layer plays its own instrument.</p>
+          </article>
+          <article>
+            <h3>Source</h3>
+            <p id="credit-text">NASA Scientific Visualization Studio.</p>
+          </article>
+        </section>
       </div>
 
       <div class="now">
@@ -78,20 +94,6 @@
       </div>
     </section>
 
-    <section class="details" aria-label="About this recording">
-      <article>
-        <h3>What you see</h3>
-        <p id="see-text">Each record on the shelf is a real visualization from NASA's Scientific Visualization Studio used on the Earth Information Center hyperwall.</p>
-      </article>
-      <article>
-        <h3>What you hear</h3>
-        <p id="hear-text">A playhead sweeps each frame from left to right. Colors from the visualization's color scale are separated into layers, and every layer plays its own instrument.</p>
-      </article>
-      <article>
-        <h3>Source</h3>
-        <p id="credit-text">NASA Scientific Visualization Studio.</p>
-      </article>
-    </section>
 
     <section class="shelf" aria-labelledby="shelf-title">
       <div class="shelf-head">

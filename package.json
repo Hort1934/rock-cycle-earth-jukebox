@@ -7,7 +7,7 @@
   "license": "MIT",
   "scripts": {
     "check": "node tools/check.mjs",
-    "lint": "node --check js/analysis.js && node --check js/audio.js && node --check js/catalog.js && node --check js/describe.js && node --check js/main.js && node --check js/voice.js && node --check tools/check.mjs",
+    "lint": "node --check js/analysis.js && node --check js/audio.js && node --check js/catalog.js && node --check js/describe.js && node --check js/main.js && node --check js/voice.js && node --check js/demo.js && node --check tools/check.mjs",
     "start": "python tools/serve.py 8000"
   }
 }

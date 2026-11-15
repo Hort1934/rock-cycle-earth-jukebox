@@ -368,4 +368,9 @@ async function init() {
   requestAnimationFrame(drawOverlay);
 }
 
-init();
+init().then(() => {
+  // ?demo plays a scripted 30-second tour for recording the submission video.
+  if (new URLSearchParams(location.search).has('demo')) {
+    import('./demo.js').then(({ runDemo }) => runDemo({ selectTrack, play, pause, setGenre, setTempo, voice, video: el.video }));
+  }
+});
